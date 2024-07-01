@@ -45,3 +45,5 @@ for cfg in *.cnf.in; do
         sed -e "s/{ PODNAME }/${PODNAME}/" -e "s/{ PODIP }/${PODIP}/" -e "s/{ SSL_CIPHER }/${SSL_CIPHER}/" "/var/lib/config-data/default/${cfg}" > "/var/lib/config-data/generated/${cfg%.in}"
     fi
 done
+
+touch /var/log/mariadb/mariadb.log
