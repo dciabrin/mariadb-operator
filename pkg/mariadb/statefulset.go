@@ -94,6 +94,10 @@ func StatefulSet(g *mariadbv1.Galera, configHash string, topology *topologyv1.To
 }
 
 func getGaleraInitContainers(g *mariadbv1.Galera) []corev1.Container {
+	var galeraRsc corev1.ResourceRequirements
+	if g.Spec.Resources != nil {
+		galeraRsc = *g.Spec.Resources
+	}
 	return []corev1.Container{{
 		Image:   g.Spec.ContainerImage,
 		Name:    "mysql-bootstrap",
@@ -115,11 +119,16 @@ func getGaleraInitContainers(g *mariadbv1.Galera) []corev1.Container {
 				},
 			},
 		}},
+		Resources:    galeraRsc,
 		VolumeMounts: getGaleraInitVolumeMounts(g),
 	}}
 }
 
 func getGaleraContainers(g *mariadbv1.Galera, configHash string) []corev1.Container {
+	var galeraRsc corev1.ResourceRequirements
+	if g.Spec.Resources != nil {
+		galeraRsc = *g.Spec.Resources
+	}
 	timeout := strconv.Itoa(StartupProbeTimeout)
 	containers := []corev1.Container{{
 		Image:   g.Spec.ContainerImage,
@@ -149,6 +158,7 @@ func getGaleraContainers(g *mariadbv1.Galera, configHash string) []corev1.Contai
 			ContainerPort: 4567,
 			Name:          "galera",
 		}},
+		Resources:    galeraRsc,
 		VolumeMounts: getGaleraVolumeMounts(g),
 		StartupProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
