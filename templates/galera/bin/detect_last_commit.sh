@@ -38,6 +38,11 @@ function json_summary {
 
 trap json_summary EXIT
 
+if pgrep mysqld >/dev/null; then
+    echo "Cannot run this script while mysqld is running! Aborting" >&2
+    exit 2
+fi
+
 # codership/galera#354
 # Some ungraceful shutdowns can leave an empty gvwstate.dat on
 # disk. This will prevent galera to join the cluster if it is

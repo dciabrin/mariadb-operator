@@ -19,6 +19,11 @@ URI_FILE=/var/lib/mysql/gcomm_uri
 rm -f /var/lib/mysql/mysql.sock
 rm -f $URI_FILE
 
+# Discover the state of the local galera database and report it
+# back to the galera CR so the mariadb-operator can decide how
+# to start mysqld in this container.
+python3 /var/lib/operator-scripts/report_local_galera_state
+
 echo "Waiting for gcomm URI to be configured for this POD"
 while [ ! -f $URI_FILE ]; do
     sleep 2
