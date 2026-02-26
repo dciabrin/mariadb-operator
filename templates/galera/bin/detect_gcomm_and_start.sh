@@ -15,8 +15,15 @@ fi
 
 URI_FILE=/var/lib/mysql/gcomm_uri
 
+
 rm -f /var/lib/mysql/mysql.sock
-rm -f $URI_FILE
+echo "Checking for existing gcomm_uri file"
+find /var/lib/mysql -maxdepth 1 -name gcomm_uri
+if [ -f $URI_FILE ]; then
+    echo "Deleting existing gcomm_uri file"
+    ls -l $URI_FILE
+    rm -f $URI_FILE
+fi
 
 echo "Waiting for gcomm URI to be configured for this POD"
 while [ ! -f $URI_FILE ]; do
