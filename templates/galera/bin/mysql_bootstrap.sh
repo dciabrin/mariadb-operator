@@ -1,17 +1,23 @@
 #!/bin/bash
 set +eux
 
-
-# prepare space for mysql_root_auth.sh to place pw cache file
-sudo mkdir -p /var/local/my.cnf
-sudo chown mysql:mysql /var/local/my.cnf
-
 # set up $DB_ROOT_PASSWORD.
-# disable my.cnf caching in mysql_root_auth.sh, so that we definitely
-# use the root password defined in the cluster.   this should create
-# a new file in /var/local/my.cnf/
-# OSPRH-27031: Conditional sourcing for backwards compatibility with old pods
-# where script is updated but mysql_root_auth.sh is not yet available
+#
+# MYSQL_ROOT_AUTH_BYPASS_CHECKS=true: disable my.cnf caching in
+# mysql_root_auth.sh, so that we definitely use the root password defined in
+# the cluster.
+#
+# WARNINGS FOR NEW FILESYSTEM: the container, if on new volumes without an
+# existing mysql database, does not yet have /var/local/my.cnf/ directory set
+# up, and we can't create it until kolla_set_configs below runs, so
+# mysql_root_auth.sh will warn that it can't create the cache file in this
+# case.  it will get created on subsequent runs.
+#
+# OSPRH-27031: The conditional is for backwards compatibility with old pods
+# where script is updated but mysql_root_auth.sh is not yet available; in those
+# cases we rely upon DB_ROOT_PASSWORD already part of the pods environment as
+# was the case before the introduction of mysql_root_auth.sh.
+#
 if [ -f /var/lib/operator-scripts/mysql_root_auth.sh ]; then
     MYSQL_ROOT_AUTH_BYPASS_CHECKS=true source /var/lib/operator-scripts/mysql_root_auth.sh
 else
@@ -113,9 +119,19 @@ EOF
 
 if [ -e /var/lib/mysql/mysql ]; then
     echo -e "Database already exists. Reuse it."
+
     # set up permissions of mounted directories before starting
     # galera or the sidecar logging container
+    # NOTE: kolla_set_configs is explicitly allowed in sudoers and needs
+    # sudo to set up permissions
     sudo -E kolla_set_configs
+
+    # now that /var/local/ is owned by mysql, prepare space for future
+    # invocations of mysql_root_auth.sh to place pw cache file.
+    # for existing DB these may or may not already be present.
+    mkdir -p /var/local/my.cnf
+    chown mysql:mysql /var/local/my.cnf
+
     kolla_update_db_root_pw
 else
     echo -e "Creating new mariadb database."
@@ -129,7 +145,18 @@ else
 bind_address=localhost
 wsrep_provider=none
 EOF
+    # set up permissions of mounted directories before starting
+    # galera or the sidecar logging container
+    # NOTE: kolla_set_configs is explicitly allowed in sudoers and needs
+    # sudo to set up permissions
     sudo -E kolla_set_configs
+
+    # now that /var/local/ is owned by mysql, prepare space for future
+    # invocations of mysql_root_auth.sh to place pw cache file.
+    # these are also in galera.cnf so set these up before we start
+    mkdir -p /var/local/my.cnf
+    chown mysql:mysql /var/local/my.cnf
+
     kolla_extend_start
 fi
 
