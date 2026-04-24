@@ -149,6 +149,8 @@ func getGaleraContainers(g *mariadbv1.Galera, configHash string) []corev1.Contai
 					Command: []string{"/bin/bash", "/var/lib/operator-scripts/mysql_probe.sh", "liveness"},
 				},
 			},
+			// Do not rely on the default timeout (1s)
+			TimeoutSeconds: 5,
 		},
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -156,6 +158,8 @@ func getGaleraContainers(g *mariadbv1.Galera, configHash string) []corev1.Contai
 					Command: []string{"/bin/bash", "/var/lib/operator-scripts/mysql_probe.sh", "readiness"},
 				},
 			},
+			// Do not rely on the default timeout (1s)
+			TimeoutSeconds: 5,
 		},
 		Lifecycle: &corev1.Lifecycle{
 			PreStop: &corev1.LifecycleHandler{
